@@ -563,3 +563,16 @@ how : SHUT_RD, SHUT_WR, SHUT_RDWR
 
 ![shutdown01](../assets/shutdown01.png)
 
+## select
+
+![select01](../assets/select01.png)
+
+![select02](../assets/select02.png)
+
+```c
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
+```
+
+原理 ： 借助内核，select来监听，客户端连接，数据通信事件
+
+
