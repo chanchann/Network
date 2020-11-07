@@ -569,10 +569,95 @@ how : SHUT_RD, SHUT_WR, SHUT_RDWR
 
 ![select02](../assets/select02.png)
 
-```c
 int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
-```
+
+参数:
+
+nfds:监听的所有文件描述符中，最大的文件描述符+1
+
+三个传入传出参数:
+
+readfds: 读文件描述符监听集合
+
+writefds: 写文件描述符监听集合 ， 一般NULL，不太常用
+
+exceptfds: 异常写文件描述符监听集合， 一般NULL，不太常用
+
+timeout: 
+
+> 0 : 设置监听超时时长
+
+NULL : 阻塞监听
+
+0 : 非阻塞监听，轮询
+
+返回值:
+
+> 0 : 所有监听集合(3个)中，满足对应事件的总数
+
+0 ： 没有满足监听条件的文件描述符
+
+-1： errno
 
 原理 ： 借助内核，select来监听，客户端连接，数据通信事件
 
+![select03](../assets/select03.png)
+
+void FD_ZERO(fd_set *set);  -- 清空一个文件描述符集合
+
+void FD_SET(int fd, fd_set *set);  -- 将待监听的文件描述符，添加到监听集合中
+
+void FD_CLR(int fd, fd_set *set); -- 将一个文件描述符从监听集合中移除
+
+int  FD_ISSET(int fd, fd_set *set); -- 判断一个文件描述符是否在监听集合中
+```c
+fd_set rest;
+FD_ZERO(&rest);
+
+FD_SET(3, &rest);
+FD_SET(5, &rest);
+FD_SET(6, &rest);
+
+FD_CLR(4, &rest);
+
+FD_ISSET(4, &rest);
+
+```
+
+## select 实现对路IO转接设计思路
+
+```c
+lfd = socket();  // 创建套接字
+
+bind();  // 绑定地址结构
+
+listen();  // 设置监听上限
+
+fd_set rset, allset;  // 创建监听集合
+
+FD_ZERO(&allset);   // 将allset监听集合清空
+
+FD_SET(lfd, &allset); // 将lfd添加至集合中
+
+while(1){
+      rset = allset;  // 保存监听集合
+
+      ret = select(lfd+1, &rset, NULL, NULL, NULL);  // 监听文件描述符集合对应事件
+      // 有监听的描述符满足对应事件
+      if(ret > 0) { 
+            if(FD_ISSET(lfd, &rset)) {  // 1在， 0不在
+                  cfd = accept(); //建立连接，返回用于通信的文件描述符
+                  FD_SET(cfd, &allset);  //添加到监听通信描述符集合中
+                  for(i = lfd + 1; i <= 最大文件描述符; i++) {
+                        FD_ISSET(i, &rset);  // 有read,write事件
+                        read();
+                        小 -- 大
+                        write()
+                  }
+            }
+}
+ 
+}
+
+```
 
