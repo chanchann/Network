@@ -76,25 +76,30 @@ int main(int argc, char** argv)
                 maxi = i;
             }
 
-            if(nready == 1) { // 只有lfd有事件，后续的for不执行
+            if(--nready == 0) { // 只有lfd有事件，后续的for不执行
                 continue;
             }
         }
-        for(i = lfd + 1; i <= maxfd; i++) {
-            if(FD_ISSET(i, &rset)) {
-                // 套接字 读到 0 --> 关闭
-                if((n = Read(i, buf, sizeof(buf))) == 0) {
-                    // 当client关闭连接时，服务端也关闭对应连接
-                    Close(i);
-                    // 解除select对此文件描述符的监控
-                    FD_CLR(i, &allset);
-                }else if (n > 0){
+        // 检测哪个client 有数据就绪
+        for(i = 0; i <= maxi; i++) {
+            if((sockfd = client[i]) < 0) {
+                continue;
+            }
+            if(FD_ISSET(sockfd, &rset)) {
+                // 当client 关闭连接时，服务端也关闭相应连接
+                if((n = Read(sockfd, buf, sizeof(buf))) == 0) {
+                    Close(sockfd);
+                    FD_CLR(sockfd, &allset);
+                    client[i] = -1;
+                } else if(n > 0) {
                     for(j = 0; j < n; j++) {
                         buf[j] = toupper(buf[j]);
                     }
-                    Write(i, buf, n);
+                    Write(sockfd, buf, n);
                     Write(STDOUT_FILENO, buf, n);
                 }
+                // 注意这里是break for
+                if(--nready == 0) break;  // 刚才--nready是把lfd减去，这里把当前cfd给确认完了，不用继续往下了
             }
         }
     }

@@ -675,3 +675,47 @@ select优缺点:
 
 ### 添加一个数组提高效率
 
+## 多路IO转接
+
+select 
+
+poll
+
+epoll
+
+## poll
+
+半成品，没啥优点，不需要掌握
+
+int poll(struct pollfd *fds, nfds_t nfds, int timeout);
+
+fds: 监听的文件描述符数组
+
+```c
+struct pollfd {
+      int fd;     //待监听的文件描述符
+      short events;     // 待监听的文件描述符对应的监听事件, POLLIN,POLLOUT,POLLERR
+      short revents;    // 传入时，给0。如果满足对应事件，返回非0
+
+}
+```
+
+nfds: 监听数组的，实际有效监听个数
+
+timeout : 
+
+>0 : 超时时长，这里是毫秒millisecond
+
+-1 : 阻塞等待，#define INFTIM -1  Linux没有
+
+0 : 不阻塞
+
+返回值 : 返回满足对应监听事件的文件描述符 总个数
+
+
+
+
+
+
+
+
