@@ -712,10 +712,20 @@ timeout :
 
 返回值 : 返回满足对应监听事件的文件描述符 总个数
 
+![poll1](../assets/poll01.png)
 
+复习 read函数返回值
 
+> 0: 实际读到的字节数
 
+= 0 : socket中，表示对端关闭.close()
 
+-1 : 如果 errno == EINTR 被异常中断，需要重启
 
+     如果errno == EGAIN 或 EWOULDBLOCK， 以非阻塞方式读数据，但没有数据，需要再次读
+
+     如果errno == ECONNRESET, 说明连接重置。需要close(),移除监听队列
+
+     错误 
 
 
