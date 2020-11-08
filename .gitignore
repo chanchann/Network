@@ -73,3 +73,5 @@ bin/bootstrap
 bin/lib-bash
 
 .idea
+
+.vscode

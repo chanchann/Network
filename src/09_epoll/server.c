@@ -21,8 +21,7 @@ int main(int argc, char** argv)
     bzero(&serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERV_PORT);
-    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY)
     // 端口多路复用
     int opt = 1;
     setsockopt(lfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
