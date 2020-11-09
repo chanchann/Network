@@ -806,6 +806,8 @@ struct epoll_event {
       };
 ```
 
+
+
 - return value:
 
 成功 0 ， 失败 -1 errno
@@ -888,6 +890,83 @@ ET模式 ： 边沿触发
 
 缓冲区剩余未读尽的数据不会导致epoll_wait返回，必须要有新的事件满足才会触发
 
+有一种场景，发来500，我们只需要读前200就够了，比如预览模式，其他的都可以丢掉
+
+```c
+struct epoll_event event;
+
+event.events = EPOLLIN | EPOLLET;
+```
+
 LT模式 : 水平触发 -- 默认采用模式
 
-会导致
+比如cient发来500字节，server先读300，然后把剩余200读走
+
+(去看APUE高级IO里的readn和readline，为何封装，封装思想)
+
+结论:
+
+epoll的ET模式，高效模式，但是只支持非阻塞模式  --- 忙轮询
+
+```c
+struct epoll_event event;
+event.events = EPOLLIN | EPOLLET;
+epoll_ctl(epfd, EPOLL_CTL_ADD, cfd, &event);
+int flag = fcntl(cfd, F_GETFL);
+flag |= O_NONBLOCK;
+fcntl(cfd, F_SETFL, flag);
+```
+
+epoll优点: 高效。能突破1024文件描述符
+
+缺点: 不能跨平台
+
+## epoll反应堆模型
+
+epoll ET模式 + 非阻塞 + void *ptr
+
+```c
+// 自动回调
+struct evt {
+      int fd;
+      void (*func)(int fd); // 回调函数
+}*ptr;
+```
+
+原来: 
+
+```c
+socket,bind,listen 
+
+epoll_create 创建监听红黑树，返回epfd
+
+epoll_ctl()向书上添加一个监听fd
+
+while:
+
+epoll_wait 监听，对应监听fd有事件产生，返回监听满足数组
+
+lfd满足,Accept , cfd满足 read -- 小 -> 大 -- Write
+
+end
+
+```
+
+反应堆
+
+```c
+socket,bind,listen 
+
+epoll_create 创建监听红黑树，返回epfd
+
+epoll_ctl()向书上添加一个监听fd
+
+while:
+
+epoll_wait 监听，对应监听fd有事件产生，返回监听满足数组
+
+lfd满足,Accept , cfd满足 read -- 小转大 -- cfd从监听红黑树上摘下,epoll_ctl()监听cfd的写事件--EPOLLOUT--回调函数--epoll_ctl()--EPOLL_CTL_ADD重新放回到红黑树上分监听写事件--等待epoll_wait返回--说明cfd可写--write回去--cfd从监听红黑树上摘下--EPOLLIN--epoll_ctl()--EPOLL_CTL_ADD重新放回到红黑树上分监听读事件--epoll_wait监听
+
+end
+// 总结 : 不但要监听cfd的读事件，还要监听cfd的写事件
+```
