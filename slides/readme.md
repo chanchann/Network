@@ -970,3 +970,20 @@ lfd满足,Accept , cfd满足 read -- 小转大 -- cfd从监听红黑树上摘下
 end
 // 总结 : 不但要监听cfd的读事件，还要监听cfd的写事件
 ```
+
+
+eventset函数：
+
+设置回调函数 : lfd -> acceptconn()
+
+            cfd -> recvdata()
+
+eventadd函数
+
+将一个fd,添加到监听红黑树,设置监听read事件，还是write事件
+
+网络编程中:
+
+read --- recv()
+
+write --- send()
