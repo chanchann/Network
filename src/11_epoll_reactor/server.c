@@ -8,15 +8,14 @@ epoll 基于非阻塞I/O事件驱动
 #define BUFLEN 4096
 #define SERV_PORT 6666
 
-void revdata(int fd, int events, void *arg);
+void recvdata(int fd, int events, void *arg);
 void senddata(int fd, int events, void *arg);
 
 /* 描述就绪文件描述符相关信息 */
-
 struct myevent_s {
     int fd;   //要监听的文件描述符
-    int events;   // 对应的监听事件
-    void *arg;   // 泛型参数
+    int events;   // 对应的监听事件，EPOLLIN和EPLLOUT
+    void *arg;   // 泛型参数 ，指向自己结构体指针
     void (*call_back)(int fd, int events, void* arg); //回调函数
     int status;  //是否在监听， 1--> 在红黑树上(监听) , 0--> 不在(不监听)
     char buf[BUFLEN];
@@ -24,10 +23,15 @@ struct myevent_s {
     long last_active;   // 记录每次加入红黑树 g_efd的时间值
 };
 
-int g_efd;    // 全局变量，保存epoll_create返回的文件描述符
+int g_efd;    // 全局变量，保存epoll_create返回的文件描述符 -- 红黑树根
 struct myevent_s g_events[MAX_EVENTS + 1];    // 自定义结构体类型数组， +1 --> lfd ，将lfd放在最后MAX_EVENTS位置
 
 // 将结构体myevent_s 成员变量初始化
+/*
+ * 封装一个自定义事件，包括fd，这个fd的回调函数，还有一个额外的参数项
+ * 注意：在封装这个事件的时候，为这个事件指明了回调函数，一般来说，一个fd只对一个特定的事件
+ * 感兴趣，当这个事件发生的时候，就调用这个回调函数
+ */
 void eventset(struct myevent_s* ev, int fd, void (*call_back)(int, int, void*), void* arg) {
     ev->fd = fd;
     ev->call_back = call_back;
@@ -35,7 +39,11 @@ void eventset(struct myevent_s* ev, int fd, void (*call_back)(int, int, void*), 
     ev->arg = arg;
     ev->status = 0;
     memset(ev->buf, 0, sizeof(ev->buf));
-    ev->len = 0;
+    // ev->len = 0;  // 这里代码问题是每次重新设置事件的时候eventset都会将buf都清空，这样写回去的数据为空
+    if(ev->len <= 0){
+        memset(ev->buf, 0, sizeof(ev->buf));
+        ev->len = 0;
+    }
     ev->last_active = time(NULL);
     
     return;
@@ -91,7 +99,7 @@ void senddata(int fd, int events, void* arg) {
     }
     return;
 }
-
+/*读取客户端发过来的数据的函数*/
 void recvdata(int fd, int events, void *arg) {
     struct myevent_s *ev = (struct myevent_s*)arg;
     int len;
@@ -114,6 +122,7 @@ void recvdata(int fd, int events, void *arg) {
         Close(ev->fd);
         printf("recv[fd=%d] error[%d]:%s\n", fd, errno, strerror(errno));
     }
+    return;
 }
 
 
@@ -164,7 +173,9 @@ void initlistensocket(int efd, short port) {
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = htonl(INADDR_ANY);
     sin.sin_port = htons(port);
-
+    
+    int opt = 1;
+    setsockopt(lfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     Bind(lfd, (struct sockaddr*)&sin, sizeof(sin));
     Listen(lfd, 20);
    
