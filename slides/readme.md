@@ -987,3 +987,19 @@ eventadd函数
 read --- recv()
 
 write --- send()
+
+## 线程池
+
+
+![thrp01](../assets/thrp01.png)
+
+线程池模块分析 
+
+1. main()
+
+创建线程池
+
+向线程池中添加任务，借助回调处理任务
+
+销毁线程池
+
