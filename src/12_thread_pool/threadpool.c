@@ -110,6 +110,23 @@ threadpool_t *threadpool_create(int min_thr_num, int max_thr_num, int queue_max_
     return NULL;
 }
 
+// 线程池中各个工作线程
+void *threadpool_thread(void *threadpool) {
+    threadpool_t *pool = (threadpool_t*)(threadpool);
+    threadpool_task_t task;
+
+    while(true) {
+        /* Lock must be taken to wait on conditional varable */
+        // 刚创建出线程，等待任务队列里有任务，否则阻塞等待任务队列里有任务后再唤醒接收任务
+        pthread_mutex_lock(&(pool->lock));
+
+        // queue_size == 0 说明没有任务，调wait阻塞在条件变量上，若有任务，跳过该while
+        while((pool->queue_size == 0) && (!pool->shutdown)) {
+            
+        }
+    }
+}
+
 int main(int argc, char* argv[]) {
 
     // threadpool_t *threadpool_create(int min_thr_num, int max_thr_num, int queue_max_size); 

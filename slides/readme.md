@@ -990,6 +990,7 @@ write --- send()
 
 ## 线程池
 
+https://blog.csdn.net/qq_36359022/article/details/78796784
 
 ![thrp01](../assets/thrp01.png)
 
@@ -1014,3 +1015,27 @@ write --- send()
 创建一个管理者线程
 
 失败时，销毁开辟的所有空间(释放)
+
+3. threadpool_thread()
+
+进入子线程回调函数
+
+接收参数void *arg --> pool 结构体
+
+加锁 --> lock  --> 整个结构体锁
+
+判断条件变量  --> wait 
+
+4. adjust_thread()
+
+循环10s执行一次
+
+进入管理者线程回调函数
+
+接收参数void *arg --> pool 结构体
+
+加锁 --> lock  --> 整个结构体锁
+
+获取管理线程池要用到的变量。 task_num, live_num, busy_num
+
+根据既定算法，使用上述3变量，判断是否应该创建，销毁线程池中 指定步长的线程
