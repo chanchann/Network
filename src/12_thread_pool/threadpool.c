@@ -127,6 +127,43 @@ void *threadpool_thread(void *threadpool) {
     }
 }
 
+// 向线程池中 添加一个任务
+// threadpool_add(thp, process, (void*)&num[i]);  // 向线程池中添加任务process: 小写-->大写
+int threadpool_add(threadpool_t *pool, void*(*function)(void *arg), void* arg) {
+    pthread_mutex_lock(&(pool->lock));
+    // == 为真，队列已经满，调wait阻塞
+    while((pool->queue_size == pool->queue_max_size) && (!pool->shutdown)) {
+        pthread_cond_wait(&(pool->queue_not_full), &(pool->lock));
+    }
+    if(pool->shutdown) {
+        pthread_cond_broadcast(&(pool->queue_not_empty));
+        pthread_mutex_unlock(&(pool->lock));
+        return 0;
+    }
+    // 清空工作线程，调用的回调函数的参数arg
+    if(pool->task_queue[pool->queue_rear].arg != NULL) {
+        pool->task_queue[pool->queue_rear].arg = NULL;
+    }
+    // 添加任务到任务队列里
+    pool->task_queue[pool->queue_rear].function = function;
+    pool->task_queue[pool->queue_rear].arg = arg;
+    pool->queue_rear = (pool->queue_rear + 1) % pool->queue_max_size;  // 队尾指针移动，模拟环形
+    poll->queue_size++;
+
+    // 添加完任务后，队列不为空，唤醒线程池 等待处理任务的线程
+    pthread_cond_signal(&(pool->queue_not_empty));
+    pthread_mutex_unlock(&(pool->lock));
+    return 0;
+}
+
+// 线程池中的线程，模拟处理业务
+void *process(void* arg) {
+    printf("thread 0x%x working on task %d\n", (unsigned int)pthread_self(), (int)arg);
+    sleep(1);    // 模拟处理事件
+    printf("task %d is end\n", (int)arg);
+    return NULL; 
+}
+
 int main(int argc, char* argv[]) {
 
     // threadpool_t *threadpool_create(int min_thr_num, int max_thr_num, int queue_max_size); 
@@ -139,7 +176,10 @@ int main(int argc, char* argv[]) {
     for(i =0; i < 20; i++) {
         num[i] = i;
         printf("add task %d\n", i);
+
+        // int threadpool_add(threadpool_t *pool, void*(*function)(void *arg), void* arg)
         // 向线程池添加任务
+        // 用process 这个回调函数去处理任务
         threadpool_add(thp, process, (void*)&num[i]);   
     }
     sleep(10);
