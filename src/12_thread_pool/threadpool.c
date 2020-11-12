@@ -122,9 +122,59 @@ void *threadpool_thread(void *threadpool) {
 
         // queue_size == 0 说明没有任务，调wait阻塞在条件变量上，若有任务，跳过该while
         while((pool->queue_size == 0) && (!pool->shutdown)) {
-            
+            printf("thread 0X%x is waiting \n", (unsigned int)pthread_self());
+            pthread_cond_wait(&(pool->queue_not_empty), &(pool->lock));
+        
+            // 清除指定数目的空闲线程，如果要结束的线程个数大于0，结束线程
+            if(pool->wait_exit_thr_num > 0) {
+                pool->wait_exit_thr_num--;
+
+                // 如果线程池里线程个数大于最小值可以结束当前线程
+                if(pool->live_thr_num > pool->min_thr_num) {
+                    printf("thread 0x%x is exiting\n", （unsigned int)pthread_self());
+                    pool->live_thr_num--;
+                    pthread_mutex_unlock(&(pool->lock));
+                    pthread_exit(NULL);
+                }
+            }
         }
+
+        // 如果指定了true，要关闭线程池里的每个线程，自行退出处理 -- 销毁线程池
+        if(pool->shutdown) {
+            pthread_mutex_unlock(&(pool->lock));
+            printf("thread 0x%x is exiting\n", (unsigned int)pthread_self());
+            pthread_detach(pthread_self());
+            pthread_exit(NULL);       // 线程自行结束
+        } 
+        // 从任务队列里获取任务，是一个出队操作
+        task.function = pool->task_queue[pool->queue_front].function;
+        task.arg = pool->task_queue[pool->queue_front].arg;
+
+        pool->queue_front = (pool->queue_front + 1) % pool->queue_max_size;  // 出队，模拟环形队列
+        pool->queue_size--;
+
+        // 通知可以有新的任务添加进来
+        pthread_cond_broadcast(&(pool->queue_not_full));
+
+        // 任务取出后，立即将 线程池锁 释放
+        pthread_mutex_unlock(&(pool->lock));
+
+        // 执行任务
+        printf("thread 0x%x start working\n", (unsigned int)pthread_self());
+        pthread_mutex_lock(&(pool->thread_counter));   // 忙状态线程数变量锁
+        pool->busy_thr_num++;       // 忙状态线程数+1
+        pthread_mutex_unlock(&(pool->thread_counter));
+
+        (*(task.function))(task.arg);       // 执行回调函数任务  这里简化为sleep(1)
+        // task.function(task.arg);
+
+        // 任务结束处理
+        printf("thread 0x%x end working\n", (unsigned int)pthread_self());
+        pthread_mutex_lock(&(pool->thread_counter));
+        pool->busy_thr_num--;       //处理掉一个任务，忙状态数线程数-1
+        pthread_mutex_unlock(&(pool->thread_counter));
     }
+    pthread_exit(NULL);
 }
 
 // 向线程池中 添加一个任务
