@@ -21,6 +21,9 @@ int main(int argc, char **argv) {
     client_addr.sun_family = AF_LOCAL;
     strcpy(client_addr.sun_path, tmpnam(NULL));
 
+    // 本地套接字 bind 到本地一个路径上，然而 UDP 客户端程序是不需要这么做的。
+    // 本地数据报套接字这么做的原因是，它需要指定一个本地路径，以便在服务器端回包时，可以正确地找到地址；
+    // 而在 UDP 客户端程序里，数据是可以通过 UDP 包的本地地址和端口来匹配的。
     if (bind(sockfd, (struct sockaddr *) &client_addr, sizeof(client_addr)) < 0) {
         error(1, errno, "bind failed");
     }
