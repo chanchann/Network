@@ -6,7 +6,7 @@
 class ClientSock {
 public:
     ClientSock(int connfd, Server& server);
-    ~ClientSock();
+    ~ClientSock() = default;
     ClientSock(const ClientSock&) = delete;
     ClientSock& operator=(const ClientSock&) = delete; 
 
@@ -18,7 +18,7 @@ public:
 
 private:
     int _connfd = -1;
-    Server& _server;    
+    Server& _server;    // Aggregation
 
 };
 

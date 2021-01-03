@@ -12,3 +12,8 @@ https://github.com/chenBright/tinyWS/blob/master/multiThread/net/TcpClient.cpp
 https://github.com/Pseudomanifold/SimpleServer/blob/master/Server.hh
 
 https://github.com/lichuan/fly/blob/master/src/fly/net/server.cpp
+
+## Resources
+
+https://beej.us/guide/bgnet/html/#close-and-shutdownget-outta-my-face
+

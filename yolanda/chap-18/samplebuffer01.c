@@ -1,3 +1,4 @@
+
 //
 // Created by shengym on 2019-07-07.
 //
@@ -34,7 +35,7 @@ int main(int argc, char **argv) {
     if (rt2 < 0) {
         error(1, errno, "listen failed ");
     }
-
+ 
     signal(SIGPIPE, SIG_IGN);
 
     int connfd;

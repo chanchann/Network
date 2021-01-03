@@ -7,9 +7,6 @@ ClientSock::ClientSock(int connfd, Server& server)
         : _connfd(connfd)
         , _server(server) 
     {};
-
-ClientSock::~ClientSock() 
-{};
  
 int ClientSock::getConnfd() const {
     return _connfd;
@@ -30,7 +27,7 @@ std::string ClientSock::read() {
 };
 
 void ClientSock::write(const std::string& data) {
-    ssize_t send(int sockfd, const void *buf, size_t len, int flags);
+    // ssize_t send(int sockfd, const void *buf, size_t len, int flags);
     auto res = send( _connfd, 
                     reinterpret_cast<const void*>( data.c_str() ),
                     data.size(),
@@ -38,6 +35,7 @@ void ClientSock::write(const std::string& data) {
     if(res == -1) 
         throw std::runtime_error( std::string( strerror( errno ) ) );
 }
+
 void ClientSock::close() {
     _server.close(_connfd);
 }

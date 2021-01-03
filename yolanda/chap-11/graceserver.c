@@ -31,7 +31,8 @@ int main(int argc, char **argv) {
     if (rt2 < 0) {
         error(1, errno, "listen failed ");
     }
-
+    // 服务器close一个连接时，若client端接着发数据。根据TCP协议的规定，会收到一个RST响应，
+    // client再往这个服务器发送数据时，系统会发出一个SIGPIPE信号给进程，告诉进程这个连接已经断开了，不要再写了。
     signal(SIGINT, sig_int);
     signal(SIGPIPE, SIG_DFL);
 
