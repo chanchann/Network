@@ -9,9 +9,9 @@ SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic" )
 FIND_PACKAGE( Threads REQUIRED )
 
 ADD_EXECUTABLE( echo
-  echo.cc
-  ClientSocket.cc
-  Server.cc
+    echo.cc
+    clientSock.cc
+    server.cc
 )
 
 TARGET_LINK_LIBRARIES( echo ${CMAKE_THREAD_LIBS_INIT} )

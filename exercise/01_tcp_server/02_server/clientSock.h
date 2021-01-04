@@ -2,7 +2,8 @@
 #define CLIENTSOCK_H 
 #include "server.h"
 #include <string>
-
+#include <future>
+class Server;  // Solve circular include
 class ClientSock {
 public:
     ClientSock(int connfd, Server& server);
@@ -21,7 +22,5 @@ private:
     Server& _server;    // Aggregation
 
 };
-
-
 
 #endif	// CLIENTSOCK_H
